@@ -23,6 +23,7 @@ module ActiveAdmin
     # It will also generate pagination links.
     #
     class PaginatedCollection < ActiveAdmin::Component
+
       builder_method :paginated_collection
 
       attr_reader :collection
@@ -101,14 +102,19 @@ module ActiveAdmin
         options[:param_name] = @param_name if @param_name
 
         if !@display_total
+
+          options[:total_pages] = collection.current_page
+          options[:right] = 0
+
           # The #paginate method in kaminari will query the resource with a
           # count(*) to determine how many pages there should be unless
-          # you pass in the :total_pages option. We issue a query to determine
-          # if there is another page or not, but the limit/offset make this
-          # query fast.
-          offset = collection.offset(collection.current_page * @per_page.to_i).limit(1).count
-          options[:total_pages] = collection.current_page + offset
-          options[:right] = 0
+          # you pass in the :total_pages option. ActiveAdmin::Helpers::Collection
+          # has already called count on this collection, if the count is equal
+          # to the page size, we assume there is another page.
+          if collection_size == @per_page.to_i
+            options[:total_pages] += 1
+          end
+
         end
 
         text_node paginate collection, options
